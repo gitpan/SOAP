@@ -2,7 +2,7 @@ package SOAP::Transport::HTTP::CGI;
 
 use strict;
 use vars qw($VERSION);
-$VERSION = '0.23';
+$VERSION = '0.25';
 
 use SOAP::Transport::HTTP::Server;
 

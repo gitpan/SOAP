@@ -2,7 +2,7 @@ package SOAP::Transport::HTTP::Server;
 
 use strict;
 use vars qw($VERSION);
-$VERSION = '0.23';
+$VERSION = '0.25';
 
 use SOAP::Defs;
 use SOAP::Parser;
@@ -26,41 +26,40 @@ sub handle_request {
 
     my $request_content_type   = $request_header_reader->('Content-Type', 1);
     my $request_content_length = $request_header_reader->('Content-Length', 1);
-    my $soap_method_name       = $request_header_reader->('SOAPMethodName', 0);
+    my $soap_method_name       = $request_header_reader->('SOAPAction', 0);
     my $debug_request          = $request_header_reader->('DebugRequest', 0);
 
     my $request_content;
     $request_content_reader->($request_content, $request_content_length);
 
-    $response_header_writer->('Content-type', 'text/xml');
-
     if ($debug_request) {
-    my $cwd = cwd();
-    $response_content_writer->("<cwd>$cwd</cwd>");
-    $response_content_writer->("<HttpMethod>$http_method</HttpMethod>");
-    $response_content_writer->("<SoapMethodName>$soap_method_name</SoapMethodName>");
-    $response_content_writer->("<RequestContentLength>$request_content_length</RequestContentLength>");
-    $response_content_writer->("<ContentType>$request_content_type</ContentType>");
-    $response_content_writer->("<EchoedRequest>$request_content</EchoedRequest>");
-    return;
+	$response_header_writer->('Content-type', 'text/xml');
+	my $cwd = cwd();
+	$response_content_writer->("<cwd>$cwd</cwd>");
+	$response_content_writer->("<HttpMethod>$http_method</HttpMethod>");
+	$response_content_writer->("<SOAPAction>$soap_method_name</SOAPAction>");
+	$response_content_writer->("<RequestContentLength>$request_content_length</RequestContentLength>");
+	$response_content_writer->("<ContentType>$request_content_type</ContentType>");
+	$response_content_writer->("<EchoedRequest>$request_content</EchoedRequest>");
+	return;
     }
     unless ('text/xml' eq $request_content_type) { 
-    return $self->_output_soap_fault(undef, $soap_status_invalid_request,
-                     'Bad Request', $soap_runcode_no, 
+    return $self->_output_soap_fault($soap_fc_client,
+                     'Bad Request', 
                      'Content-Type must be text/xml.',
                      $response_header_writer, $response_content_writer);
     }
     unless ($soap_method_name) {
-    return $self->_output_soap_fault(undef, $soap_status_invalid_request,
-                     'Bad Request', $soap_runcode_no, 
-                     'SOAPMethodName is required.',
+    return $self->_output_soap_fault($soap_fc_client,
+                     'Bad Request',
+                     'SOAPAction is required.',
                      $response_header_writer, $response_content_writer);
     }
 
     unless ($soap_method_name =~ /(^\S+)#(\S+$)/) {
-        return $self->_output_soap_fault(undef, $soap_status_invalid_request,
-                     'Bad Request', $soap_runcode_no, 
-                     'Unrecognized SOAPMethodName header',
+        return $self->_output_soap_fault($soap_fc_client,
+                     'Bad Request',
+                     "Unrecognized SOAPAction header: $soap_method_name",
                      $response_header_writer, $response_content_writer);
     }
     my ($method_uri, $method_name) = ($1, $2);
@@ -89,8 +88,8 @@ sub handle_request {
         $body    = $soap_parser->get_body();
     };
     if ($@) {
-        return $self->_output_soap_fault(undef, $soap_status_application_faulted,
-                     'Application Faulted', $soap_runcode_no,
+        return $self->_output_soap_fault($soap_fc_server,
+                     'Application Faulted',
                      "Failed while unmarshaling the request: $@",
                      $response_header_writer, $response_content_writer);
     }
@@ -105,8 +104,8 @@ sub handle_request {
             $optional_dispatcher->($request_class, $headers, $body, $em);
         };
         if ($@) {
-            return $self->_output_soap_fault(undef, $soap_status_application_faulted,
-                                             'Application Faulted', $soap_runcode_maybe,
+            return $self->_output_soap_fault($soap_fc_server,
+                                             'Application Faulted',
                                              "An exception fired while processing the request: $@",
                                              $response_header_writer, $response_content_writer);
         }
@@ -117,8 +116,8 @@ sub handle_request {
         #
         eval "require $request_class";
         if ($@) {
-            return $self->_output_soap_fault(undef, $soap_status_application_faulted,
-                                             'Application Faulted', $soap_runcode_no,
+            return $self->_output_soap_fault($soap_fc_server,
+                                             'Application Faulted',
                                              "Failed to load Perl module $request_class: $@",
                                              $response_header_writer, $response_content_writer);
         }
@@ -131,8 +130,8 @@ sub handle_request {
             $server_object->handle_request($headers, $body, $em);
         };
         if ($@) {
-            return $self->_output_soap_fault(undef, $soap_status_application_faulted,
-                                             'Application Faulted', $soap_runcode_maybe,
+            return $self->_output_soap_fault($soap_fc_server,
+                                             'Application Faulted',
                                              "An exception fired while processing the request: $@",
                                              $response_header_writer, $response_content_writer);
         }
@@ -142,21 +141,21 @@ sub handle_request {
     #
     my $response_content_length = length($response_content);
 
-    $response_header_writer->("Content-Length: $response_content_length");
+    $response_header_writer->('Content-Type', 'text/xml');
+    $response_header_writer->('Content-Length', $response_content_length);
     $response_content_writer->($response_content);
 }
 
 sub _output_soap_fault {
-    my ($self, $faultcode_uri, $faultcode, $faultstring, $runcode, $result_desc,
+    my ($self, $faultcode, $faultstring, $result_desc,
         $response_header_writer, $response_content_writer) = @_;
 
-    my $faultcode_attr = $faultcode_uri ? qq[ xmlns="$faultcode_uri"] : '';
-
-    my $response_content = qq[<Envelope xmlns="$soap_namespace"><Body><Fault><faultcode$faultcode_attr>$faultcode</faultcode><faultstring>$faultstring</faultstring><runcode>$runcode</runcode><detail>$result_desc</detail></Fault></Body></Envelope>];
+    my $response_content = qq[<s:Envelope xmlns:s="$soap_namespace"><s:Body><s:Fault><faultcode>s:$faultcode</faultcode><faultstring>$faultstring</faultstring><detail>$result_desc</detail></s:Fault></s:Body></s:Envelope>];
 
     my $response_content_length = length $response_content;
 
-    $response_header_writer->("Content-Length: $response_content_length");
+    $response_header_writer->('Content-Type', 'text/xml');
+    $response_header_writer->('Content-Length', $response_content_length);
     $response_content_writer->($response_content);
 }
 
@@ -175,7 +174,7 @@ SOAP::Transport::HTTP::Server - Server side HTTP support for SOAP/Perl
 =head1 DESCRIPTION
 
 This class provides all the HTTP related smarts for a SOAP server,
-independent of what web browser it's attached to. It exposes
+independent of what web server it's attached to. It exposes
 a single function (that you'll never call, unless you're adapting
 SOAP/Perl to a new web server environment) that provides a set
 of function pointers for doing various things, like getting

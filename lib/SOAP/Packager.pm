@@ -4,7 +4,7 @@ use strict;
 use vars qw($VERSION);
 use SOAP::Defs;
 
-$VERSION = '0.23';
+$VERSION = '0.25';
 
 sub new {
     my ($class, $soap_prefix, $depth, $print_fcn) = @_;
@@ -131,9 +131,33 @@ sub seal_object {
 
     my $attrs = qq[ ${sp}id="$id"];
 
-    my $accessor_type = $serializer->get_accessor_type();
-    if ($soapperl_accessor_type_simple == $accessor_type) {
+    if ($serializer->is_compound()) {
+	my $new_depth = $self->{depth} + 1;
 
+	my $nsprefix = '';
+	if (defined $accessor_uri) {
+	    (my $nsdecl, $nsprefix) = $envelope->_push_ns_decl_and_prefix($accessor_uri, $new_depth);
+	    $attrs .= $nsdecl if $nsdecl;
+	}
+	my $tag = $nsprefix . $accessor_name;
+
+	$self->_print(qq[<$tag$attrs>]);
+
+	my $packager = $serializer->is_package() ?
+	    $envelope->_create_new_package($new_depth) : $self;
+	
+	my $stream = SOAP::OutputStream->new();
+	$stream->{tag}          = $tag;
+	$stream->{packager}     = $packager;
+	$stream->{envelope}     = $envelope;
+	$stream->{print_fcn}    = $self->{print_fcn};
+	$stream->{soap_prefix}  = $self->{soap_prefix};
+	$stream->{depth}        = $new_depth;
+
+	$serializer->serialize($stream, $envelope);
+	$stream->term();
+    }
+    else {
         my $content = $serializer->serialize_as_string();
 
         my $nsprefix = '';
@@ -146,32 +170,8 @@ sub seal_object {
         $self->_print(qq[<$tag$attrs>$content</$tag>]);
 
         return;
+
     }
-
-    my $new_depth = $self->{depth} + 1;
-
-    my $nsprefix = '';
-    if (defined $accessor_uri) {
-        (my $nsdecl, $nsprefix) = $envelope->_push_ns_decl_and_prefix($accessor_uri, $new_depth);
-        $attrs .= $nsdecl if $nsdecl;
-    }
-    my $tag = $nsprefix . $accessor_name;
-
-    $self->_print(qq[<$tag$attrs>]);
-
-    my $packager = $serializer->is_package() ?
-        $envelope->_create_new_package($new_depth) : $self;
-    
-    my $stream = SOAP::OutputStream->new();
-    $stream->{tag}          = $tag;
-    $stream->{packager}     = $packager;
-    $stream->{envelope}     = $envelope;
-    $stream->{print_fcn}    = $self->{print_fcn};
-    $stream->{soap_prefix}  = $self->{soap_prefix};
-    $stream->{depth}        = $new_depth;
-
-    $serializer->serialize($stream);
-    $stream->term();
 }
 
 sub _print {
@@ -230,6 +230,12 @@ SOAP/Perl, the above synopsis will probably be all you need if you want to reuse
 class. Whatever you pass for the $env reference should implement a function called
 _alloc_id that returns a unique string each time it is called. This is normally
 implemented by SOAP::Envelope, so you can see a sample implementation there.
+
+NOTE NOTE NOTE: The SOAP "package" attribute was dropped when the SOAP spec
+                went from version 1.0 to version 1.1. Use package-related
+                functionality at your own risk - you may not interoperate
+                with other servers if you rely on it. I'll eventually remove
+                this feature if it doesn't reappear in the spec soon.
 
 =head1 AUTHOR
 

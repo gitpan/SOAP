@@ -1,6 +1,6 @@
 package SOAP;
 
-$VERSION = '0.23';
+$VERSION = '0.25';
 sub Version { $VERSION; }
 
 require 5.004;
@@ -28,14 +28,13 @@ SOAP/Perl is a collection of Perl modules which provides a simple
 and consistent application programming interface (API) to the 
 Simple Object Access Protocl (SOAP).
 
-To learn more about SOAP, visit the FAQ at:
-<URL:http://www.develop.com/soap/soapfaq.htm>
+To learn more about SOAP, see the W3C note at
+<URL:http://www.w3.org/TR/SOAP>
 
 This library provides tools for you to build SOAP clients and servers.
 
 The library contains modules for high-level use of SOAP, but also modules
 for lower-level use in case you need something a bit more customized.
-The library is factored so that you can 
 
 SOAP/Perl uses Perl's object oriented features exclusively. There are
 no subroutines exported directly by these modules.
@@ -58,7 +57,7 @@ used separately or together.
 Provides an object oriented model for serializing/deserializing and
 sending/receiving SOAP packets (lovingly referred to in some circles
 as SOAP bars). Within this framework we currently support access to SOAP
-over HTTP, but we're looking to expand to support SOAP over SMTP and
+over HTTP, but we're open to expanding support for SOAP over SMTP and
 other transports in the future.
 
 =item *
@@ -67,7 +66,7 @@ Provides a fully object oriented interface.
 
 =item *
 
-Supports SOAP 1.0 spec. The current version does not yet handle arrays.
+Supports SOAP 1.1 spec. The current version does not yet handle arrays.
 
 =item *
 
@@ -77,18 +76,19 @@ for instance).
 
 =item *
 
-Provides full namespace support for SOAP 1.0, which is strongly recommended
+Provides full namespace support for SOAP 1.1, which is recommended
 by the spec.
 
 =item *
 
-Implements full support for SOAP 1.0 packages, including correctly dealing
+Implements full support for SOAP 1.1 references, including correctly dealing
 with shared references between header and body elements.
 
 =item *
 
 Experimental support for extensibility of the serialization/deserialization
-architecture has been included; see SOAP::TypeMapper for details.
+architecture has been included; see SOAP::TypeMapper for details, and
+SOAP::Struct and SOAP::StructSerializer for a specific example.
 
 =item *
 
@@ -101,9 +101,8 @@ as well as IIS on Windows 2000.
 =head2 The EnvelopeMaker Object
 
 SOAP::EnvelopeMaker takes as input an array of header objects and a single
-body object (currently these "objects" are simply Perl hashes, eventually
-we'll add support for blessed object references as well), and produces as
-output an XML stream.
+body object (currently these "objects" are either Perl hashes, or instances
+of SOAP::Struct), and produces as output an XML stream.
 
 =head2 The Parser Object
 
@@ -136,7 +135,9 @@ This table should give you a quick overview of the classes provided by the
 library.
 
 -- High-level classes you should begin with --
-
+ SOAP::Struct          -- Ordered collection often used to
+                          hold SOAP requests and responses
+ SOAP::TypedPrimitive  -- Adds an explicit xsi:type to stream
  SOAP::EnvelopeMaker   -- Serializes objects into SOAP bars
  SOAP::Parser          -- Deserializes SOAP bars into objects
  SOAP::Transport       -- Description of transport architecture
@@ -155,8 +156,10 @@ library.
                         Low level access to SOAP serialization
  SOAP::Packager      -- Helps to implement SOAP 1.0 packages,
                         used by SOAP::Envelope and SOAP::OutputStream
- SOAP::GenericHashSerializer   -- Generic serializer for Perl hash references
- SOAP::GenericScalarSerializer -- Generic serializer for Perl scalars
+ SOAP::GenericHashSerializer    -- Generic serializer for Perl hash references
+ SOAP::GenericScalarSerializer  -- Generic serializer for Perl scalars
+ SOAP::TypedPrimitiveSerializer -- Specialized serializer
+ SOAP::StructSerializer         -- Specialized serializer
 
 -- Deserialization architecture --
 
@@ -181,7 +184,6 @@ provide.
 The serialization framework does not yet handle arrays,
 and the HTTP transport does not handle M-POST.
 
-
 =head1 ACKNOWLEDGEMENTS
 
 Keith Brown is the original and current author of this work, but
@@ -205,7 +207,7 @@ modify it under the same terms as Perl itself.
 The latest version of this library is normally available from CPAN
 as well as:
 
- http://www.develop.com/soap
+  http://soapl.develop.com/soap_perl_current
 
 The best place to discuss this code is on the SOAP
 mailing list at:

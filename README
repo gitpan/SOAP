@@ -5,25 +5,24 @@ SOAP/Perl is a collection of Perl modules which provides a simple
 and consistent application programming interface (API) to the 
 Simple Object Access Protocl (SOAP).
 
-To learn more about SOAP, visit the FAQ at:
-<URL:http://www.develop.com/soap/soapfaq.htm>
+To learn more about SOAP, see
+<URL:http://www.w3.org/TR/SOAP>
 
 This library provides tools for you to build SOAP clients and servers.
 
 The library contains modules for high-level use of SOAP, but also modules
 for lower-level use in case you need something a bit more customized.
-The library is factored so that you can 
 
 SOAP/Perl uses Perl's object oriented features exclusively. There are
 no subroutines exported directly by these modules.
 
-This version of SOAP/Perl supports the SOAP 1.0 specification,
+This version of SOAP/Perl supports a subset of the SOAP 1.1 specification,
 which is an IETF internet draft. See <URL:http://www.ietf.org>
-for details.
+for details. See below for SOAP/Perl's major limitations.
 
 PREREQUISITES
 
-This library has been tested by the author on Perl version 5.005.
+This library has been tested by the author on Perl version 5.6.0.
 Some modules within this package depend on other packages that are
 distributed separately from Perl.  We recommend that you have the
 following distributions installed before you install SOAP/Perl:
@@ -53,7 +52,7 @@ by running these commands:
 
 During the "make test" phase, there is an optional test that makes a
 live SOAP call over HTTP to an example server running on the author's
-machine. If you aren't connected to the internet, you should skip
+machine. If you aren't connected to the Internet, you should skip
 this test.
 
 
@@ -66,13 +65,16 @@ installed as part of the "make install" process.  You should also be
 able to use the 'perldoc' utility to extract and read documentation
 from the module files directly.
 
+LIMITATIONS
+
+SOAP/Perl currently does not support arrays. This will be added
+in a future version.
 
 SUPPORT
 
 Questions about how to use this library should be directed to the
 SOAP mailing list at <URL:http://discuss.develop.com/soap.html>.
-Bug reports and suggestions for improvements can also be sent here
-(eventually we'll have a separate list for SOAP/Perl, stay tuned).
+Bug reports and suggestions for improvements can also be sent here.
 This mailing list is also the place for general discussions and
 development of the SOAP/Perl package and the SOAP protocol itself.
 
@@ -84,7 +86,7 @@ AVAILABILITY
 
 The latest version of SOAP/Perl should always be available from:
 
-     http://www.develop.com/soap
+     http://soapl.develop.com/soap_perl_current
 
 The library is also available from the Comprehensive Perl Archive
 Network (CPAN).  Visit <URL:http://www.perl.com/CPAN/> to find a CPAN

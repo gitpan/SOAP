@@ -13,6 +13,7 @@ use XML::Parser::Expat;
 use SOAP::EnvelopeMaker;
 use SOAP::Transport::HTTP::CGI;
 use SOAP::Parser;
+use SOAP::Struct;
 $loaded = 1;
 print "ok 1\n";
 
@@ -22,24 +23,19 @@ print "ok 1\n";
 # (correspondingly "not ok 13") depending on the success of chunk 13
 # of the test code):
 
-use ExtUtils::MakeMaker qw(prompt);
-
-unless (test2()) { print 'not ' }
-print "ok test 2\n";
-
-
 #
 # test 2 - try to make a SOAP request to soapl.develop.com
 #        
 #
 sub test2() {
-    my $soap_perl_server = 'soapl.develop.com';
-    my $test_endpoint = 'http://' . $soap_perl_server . '/soap?class=Geometry';
+    my $soap_perl_server           = 'soapl.develop.com';
+    my $test_endpoint_for_mod_perl = '/soap?class=SPTest';
+    my $test_endpoint_for_cgi      = '/cgi-bin/soap.pl?class=SPTest';
+
     print qq[
 
-This test sends a live SOAP call to $soap_perl_server, calculating the area
-of a rectangle passed in the request packet. If you're not connected to the
-internet, please skip this test.
+This test sends a live SOAP call to $soap_perl_server, adding two numbers.
+If you're not connected to the Internet, please skip this step.
 
 ];
     my $skip_test = ExtUtils::MakeMaker::prompt('Do you want me to skip this test?', 'no');
@@ -67,16 +63,16 @@ internet, please skip this test.
 
     print "\nOk, I can ping $soap_perl_server.\n";
 
-    print "\nMaking a SOAP call to $soap_perl_server: calculateArea()...\n";
+    print "\nMaking a SOAP call to $soap_perl_server: add()...\n";
 
     eval {
-        print "\n\nCalling the CGI version of the server 5 times:\n";
-        for (my $i = 0; $i < 5; ++$i) {
-            make_call("http://soapl.develop.com/cgi-bin/ServerDemo.pl?class=Geometry");
-        }
-        print "\n\nSkipping the mod_perl test - we've been having some trouble with mod_perl on the server recently...\n";
-        for ($i = 0; $i < 0; ++$i) {
-            make_call("http://soapl.develop.com/soap?class=Geometry");
+#        print "\n\nCalling the CGI version of the server 5 times:\n";
+#        for (my $i = 0; $i < 5; ++$i) {
+#            make_call($soap_perl_server, 80, $test_endpoint_for_cgi);
+#        }
+        print "\n\nCalling the mod_perl version of the server 5 times:\n";
+        for ($i = 0; $i < 5; ++$i) {
+            make_call($soap_perl_server, 80, $test_endpoint_for_mod_perl);
         }
     };
     if ($@) {
@@ -91,30 +87,26 @@ internet, please skip this test.
 sub make_call {
   use SOAP::EnvelopeMaker;
 
-  my ($endpoint)    = @_;
-  my $method_uri  = "urn:schemas-develop-com:geometry";
-  my $method_name = "calculateArea";
+  my ($host, $port, $endpoint) = @_;
+  my $method_uri  = "urn:soap-perl-test";
+  my $method_name = "add";
 
   my $soap_request = '';
-  my $output_fcn = sub {
-    $soap_request .= shift;
-  };
-  my $em = SOAP::EnvelopeMaker->new($output_fcn);
+  my $em = SOAP::EnvelopeMaker->new(\$soap_request);
 
-  my $body = {
-    origin => { x => 10, y => 20 },
-    corner => { x => 100, y => 200 },
-  };
-  my $expected_result = ($body->{corner}{x} - $body->{origin}{x}) *
-                        ($body->{corner}{y} - $body->{origin}{y});
+  my $a = 3;
+  my $b = 4;
+  my $expected_result = $a + $b;
 
-  $em->set_body($method_uri, $method_name, 0, $body);
+  my $request_body = SOAP::Struct->new(a => $a, b => $b);
+
+  $em->set_body($method_uri, $method_name, 0, $request_body);
 
   use SOAP::Transport::HTTP::Client;
 
   my $soap_on_http = SOAP::Transport::HTTP::Client->new();
 
-  my $soap_response = $soap_on_http->send_receive($endpoint,
+  my $soap_response = $soap_on_http->send_receive($host, $port, $endpoint,
                                                 $method_uri,
                                                 $method_name,
                                                 $soap_request);
@@ -123,26 +115,30 @@ sub make_call {
   my $soap_parser = SOAP::Parser->new();
   $soap_parser->parsestring($soap_response);
 
-  $body = $soap_parser->get_body();
+  $response_body = $soap_parser->get_body();
 
-  if (exists $body->{area}) {
-    my $area = $body->{area};
-    unless ($area == $expected_result) { die "Hmm. My math must be getting bad. I expected to get $expected_result, and instead, got $area" }
-    print "The area is: $area\n";
+  if (exists $response_body->{return}) {
+    my $c = $response_body->{return};
+    unless ($c == $expected_result) { die "Hmm. My math must be getting bad. I expected to get $expected_result, and instead, got $c" }
+    print "$a + $b = $c\n";
   }
   else {
-    my $faultcode   = $body->{faultcode};
-    my $faultstring = $body->{faultstring};
-    my $runcode     = $body->{runcode};
-    my $detail      = $body->{detail};
+    my $faultcode   = $response_body->{faultcode};
+    my $faultstring = $response_body->{faultstring};
+    my $detail      = $response_body->{detail};
     
     die <<"END_MSG";
 Whoops, something bad happened:
   faultcode   = $faultcode
   faultstring = $faultstring
-  runcode     = $runcode
   detail      = $detail
 END_MSG
   }
 }
+
+use ExtUtils::MakeMaker qw(prompt);
+
+unless (test2()) { print 'not ' }
+print "ok test 2\n";
+
 

@@ -2,9 +2,8 @@ package SOAP::GenericScalarSerializer;
 
 use strict;
 use vars qw($VERSION);
-use SOAP::Defs;
 
-$VERSION = '0.23';
+$VERSION = '0.25';
 
 sub new {
     my ($class, $scalar) = @_;
@@ -17,12 +16,16 @@ sub get_typeinfo {
     (undef, undef);
 }
 
-sub is_package {
+sub is_compound {
     0;
 }
 
-sub get_accessor_type {
-    $soapperl_accessor_type_simple;
+sub is_multiref {
+    0;
+}
+
+sub is_package {
+    0;
 }
 
 sub serialize_as_string {

@@ -2,7 +2,7 @@ package SOAP::Parser;
 
 use strict;
 use vars qw($VERSION);
-$VERSION = '0.23';
+$VERSION = '0.25';
 
 use SOAP::Defs;
 use SOAP::GenericInputStream;
@@ -35,8 +35,8 @@ my $g_attr_parse_table = {
     $soap_href          => [$soap_namespace, 'href'         ],
     $soap_package       => [$soap_namespace, 'package'      ],
     $soap_root_with_id  => [$soap_namespace, 'root_with_id' ],
-    $xsd_type           => [$xsd_namespace,  'typename'     ],
-    $xsd_null           => [$xsd_namespace,  'null'         ],
+    $xsd_type           => [$xsi_namespace,  'typename'     ],
+    $xsd_null           => [$xsi_namespace,  'null'         ],
 };
 
 sub new {
@@ -421,7 +421,7 @@ sub _generic_on_start {
     $self->{text} = '';
 
     # TBD: how much checking do we want to do for invalid attribute combinations?
-    #      (for instance, if xsd:null="1", then it doesn't make sense
+    #      (for instance, if xsi:null="1", then it doesn't make sense
     #       to also have an href attribute)
     if ($self->{is_null}) {
         $self->_push_handlers(Start => sub { $self->_null_on_start(@_) },
@@ -508,13 +508,13 @@ sub _ref_on_end {
 
 sub _null_on_start {
     my $self = shift;
-    $self->_throw('Elements with the xsd:null attribute cannot have child nodes');
+    $self->_throw('Elements with the xsi:null attribute cannot have child nodes');
 }
 
 sub _null_on_char {
     my $self = shift;
                                     # TBD: is this correct?
-    $self->_throw('Elements with the xsd:null attribute must be empty of content');
+    $self->_throw('Elements with the xsi:null attribute must be empty of content');
 }
 
 sub _null_on_end {
@@ -704,22 +704,10 @@ sub _parse_child_element_attrs {
                 #
                 # this code assumes we're being called in the context of a start tag
                 #
-                unless ($parser->eq_name($attr, $expected_qname)) {
-                    my $actual_ns = $parser->namespace($attr);
-                    if ($actual_ns) {
-                        $actual_ns = " (in namespace $actual_ns)";
-                    }
-                    else {
-                        $actual_ns = '';
-                    }
-                    $self->_throw("Unrecognized attribute $attr$actual_ns");
-                }
+                next unless ($parser->eq_name($attr, $expected_qname));
             }
             my $method_name = '_parse_attr_' . $method_suffix;
             $self->$method_name($attrs->[$i+1]);
-        }
-        else {
-            $self->_throw("Unrecognized attribute $attr");
         }
     }
 }
@@ -937,7 +925,7 @@ need to parse a second SOAP packet.
 TypeMapper is an optional parameter that points to an instance of SOAP::TypeMapper
 that allows you to register alternate serializers and deserializers for different
 classes of objects. See the docs for that class for more details. If you don't
-pass this parameter, the system uses a global TypeMapper object.
+pass this parameter, the system uses a default TypeMapper object.
 
 =head2 parsestring(String)
 

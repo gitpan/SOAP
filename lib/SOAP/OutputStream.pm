@@ -4,7 +4,7 @@ use strict;
 use vars qw($VERSION);
 use SOAP::Defs;
 
-$VERSION = '0.23';
+$VERSION = '0.25';
 
 ########################################################################
 # constructor
@@ -67,10 +67,9 @@ sub _simple_accessor {
         my $nsprefix = '';
         if (defined $typeuri) {
             (my $nsdecl, $nsprefix) = $self->{envelope}->_get_ns_decl_and_prefix($typeuri);
-        
             $attrs .= $nsdecl if $nsdecl;
         }
-        $attrs .= qq[ xsi:type="$nsprefix$typename"];
+        $attrs .= qq[ $xsi_prefix:type="$nsprefix$typename"];
     }
 
     $self->_print(qq[<$tag$attrs>$content</$tag>]);
@@ -109,10 +108,9 @@ sub _compound_accessor {
         my $nsprefix = '';
         if (defined $typeuri) {
             (my $nsdecl, $nsprefix) = $self->{envelope}->_push_ns_decl_and_prefix($typeuri, $new_depth);
-        
             $attrs .= $nsdecl if $nsdecl;
         }
-        $attrs .= qq[ xsi:type="$nsprefix$typename"];
+        $attrs .= qq[ $xsi_prefix:type="$nsprefix$typename"];
     }
 
     $self->_print(qq[<$tag$attrs>]);
@@ -132,7 +130,7 @@ sub _reference_accessor {
         $attrs = qq[ ${sp}$soap_href="#$id"];
     }
     else {
-        $attrs .= ' xsi:null="1"';
+        $attrs .= qq[ $xsi_prefix:$xsd_null="1"];
     }
 
     my $nsprefix = '';
@@ -218,7 +216,8 @@ SOAP::OutputStream - Writes SOAP fragments
 This creates the following XML:
 
 <s:Envelope xmlns:s="urn:schemas-xmlsoap-org:soap.v1" 
-            xmlns:xsi="http://www.w3.org/1999/XMLSchema" 
+            xmlns:xsd="http://www.w3.org/1999/XMLSchema" 
+            xmlns:xsi="http://www.w3.org/1999/XMLSchema-instance" 
             xmlns:n1="urn:foo" 
             xmlns:n2="urn:bar">
   <s:Body>
@@ -240,7 +239,7 @@ the example above.
 
 This function writes a simple accessor (e.g., a string or number, as opposed
 to a compound type). It takes two sets of URI/typenames, one for the accessor
-and one for the optional xsd:type attribute. At a minimum, you must specify the
+and one for the optional xsi:type attribute. At a minimum, you must specify the
 accessor_name and content.
 
 =head2 The compound_accessor function
@@ -254,6 +253,12 @@ further independent elements at this level in the XML document, creating a
 standalone XML fragment within the SOAP envelope. The OutputStream will complain
 if all references within the package cannot be resolved when this node is closed.
 See the SOAP spec for details on packages.
+
+NOTE NOTE NOTE: The SOAP "package" attribute was dropped when the SOAP spec
+                went from version 1.0 to version 1.1. Use package-related
+                functionality at your own risk - you may not interoperate
+                with other servers if you rely on it. I'll eventually remove
+                this feature if it doesn't reappear in the spec soon.
 
 =head2 The reference_accessor function
 

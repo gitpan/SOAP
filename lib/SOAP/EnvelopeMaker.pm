@@ -6,11 +6,19 @@ use SOAP::Defs;
 use SOAP::TypeMapper;
 use SOAP::Envelope;
 
-$VERSION = '0.23';
+$VERSION = '0.25';
 
 sub new {
     my ($class, $print_fcn, $type_mapper) = @_;
     
+    # v0.25 - added support for passing a string reference
+    if ('SCALAR' eq ref $print_fcn) {
+	my $string_ref = $print_fcn;
+	$print_fcn = sub {
+	    $$string_ref .= shift;
+	}
+    }
+
     $type_mapper ||= SOAP::TypeMapper->defaultMapper();
 
     my $self = {
@@ -65,7 +73,7 @@ sub set_body {
     my $stream = $env->body($accessor_uri, $accessor_name,
                             $typeuri, $typename,
                             $is_package,
-			    ref $object ? $object : undef);
+			    $serializer->is_multiref() ? $object : undef);
     $self->_serialize_and_term($serializer, $stream);
     $env->term();
     $self->{envelope} = undef;
@@ -75,11 +83,11 @@ sub _serialize_and_term {
     my ($self, $serializer, $stream) = @_;
 
     if ($stream) {
-	if ($soapperl_accessor_type_simple == $serializer->get_accessor_type()) {
-	    $self->{print_fcn}->($serializer->serialize_as_string())
+	if ($serializer->is_compound()) {
+	    $serializer->serialize($stream, $self->{envelope});
 	}
-	else {	    
-	    $serializer->serialize($stream);
+	else {
+	    $self->{print_fcn}->($serializer->serialize_as_string())
 	}
 	$stream->term();
     }
@@ -113,14 +121,16 @@ my $output_fcn = sub {
 };
 my $em = SOAP::EnvelopeMaker->new($output_fcn);
 
-my $body = {
-    origin => { x => 10, y => 20 },
+my $body = SOAP::Struct->new(
+    origin => { x => 10,  y => 20  },
     corner => { x => 100, y => 200 },
-};
+);
 
 $em->set_body("urn:com-develop-geometry", "calculateArea", 0, $body);
 
-my $endpoint    = "http://soapl.develop.com/soap?class=Geometry";
+my $host        = "soapl.develop.com";
+my $port        = 80;
+my $endpoint    = "/soap?class=Geometry";
 my $method_uri  = "urn:com-develop-geometry";
 my $method_name = "calculateArea";
 
@@ -128,7 +138,7 @@ use SOAP::Transport::HTTP::Client;
 
 my $soap_on_http = SOAP::Transport::HTTP::Client->new();
 
-my $soap_response = $soap_on_http->send_receive($endpoint,
+my $soap_response = $soap_on_http->send_receive($host, $port, $endpoint,
                                                 $method_uri,
                                                 $method_name,
                                                 $soap_request);
@@ -136,7 +146,7 @@ use SOAP::Parser;
 my $soap_parser = SOAP::Parser->new();
 $soap_parser->parsestring($soap_response);
 
-my $area = $soap_parser->get_body()->{area};
+my $area = $soap_parser->get_body()->{result};
 
 print "The area is: $area\n";
 
@@ -148,7 +158,9 @@ The overall usage pattern of SOAP::EnvelopeMaker is as follows:
    and create an output function that implements this policy.
 
 2) Create an instance of SOAP::EnvelopeMaker, passing a reference
-   to your output function.
+   to your output function, or to a string if you were just planning
+   on buffering the output anyway (in this case, you'll get an output
+   function that looks like this: sub {$$r .= shift}
 
 (note that somebody may already have done these first two steps
  on your behalf and simply passed you a reference to a pre-initialized
@@ -177,6 +189,11 @@ the entire envelope is constructed before you do something with it
 (like calculate the content-length, for instance), or you can simply
 pipe each chunk directly to somebody else.
 
+As of version 0.25, you can now pass a string reference for OutputFcn
+and the EnvelopeMaker will provide a very simple buffering output
+function (one that we all ended up writing anyway during testing):
+sub {$$r .= shift}
+
 =head2 add_header(AccessorUri, AccessorName, MustUnderstand, IsPackage, Object)
 
 The first two parameters allow you to specify a QName (qualified name)
@@ -200,12 +217,19 @@ like to serialize. This can be one of the following things:
 2) a hash reference - the body will contain a SOAP serialized version
                       of the contents of the hash.
 
+3) a SOAP::Struct reference - the body will contain a SOAP serialized
+                              version of the struct, where the serialized
+                              contents of the struct will be in the same
+                              order in the SOAP bar as they appeared
+                              in the SOAP::Struct constructor.
+
 Note that the SOAP/Perl serialization architecture deals with references
 very carefully, so it is possible to pass arbitrary object graphs (although
 each "object reference" must currently be a non-blessed scalar or hash reference).
 
 In the future, expect to see support for passing blessed object references
 (if you want to do this today, see the experimental SOAP::TypeMapper).
+SOAP::Struct is an example of this.
 
 One interesting thing SOAP (and SOAP/Perl) support is that the headers
 and body can share references. They can point to the same stuff. Also,

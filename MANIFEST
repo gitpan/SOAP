@@ -18,3 +18,9 @@ lib/SOAP/GenericScalarSerializer.pm
 lib/SOAP/GenericInputStream.pm
 lib/SOAP/TypeMapper.pm
 lib/SOAP/Defs.pm
+lib/SOAP/TypedPrimitive.pm
+lib/SOAP/TypedPrimitiveSerializer.pm
+lib/SOAP/SimpleTypeWrapper.pm
+lib/SOAP/Serializer.pm
+lib/SOAP/Struct.pm
+lib/SOAP/StructSerializer.pm

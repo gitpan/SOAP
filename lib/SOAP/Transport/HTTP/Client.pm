@@ -2,7 +2,7 @@ package SOAP::Transport::HTTP::Client;
 
 use strict;
 use vars qw($VERSION);
-$VERSION = '0.23';
+$VERSION = '0.25';
 
 use SOAP::Defs;
 use LWP::UserAgent;
@@ -25,12 +25,20 @@ sub debug_request {
 }
 
 sub send_receive {
-    my ($self, $endpoint, $method_uri, $method_name, $soap_request) = @_;
+    my ($self, $host, $port, $endpoint, $method_uri, $method_name, $soap_request) = @_;
 
+    $port = 80 unless(defined($port) and $port);
+	
+    my $http_endpoint = qq[http://$host:$port$endpoint];
     my $ua = LWP::UserAgent->new();
-    my $post = HTTP::Request->new('POST', $endpoint, new HTTP::Headers, $soap_request);
+    my $post = HTTP::Request->new('POST', $http_endpoint, new HTTP::Headers, $soap_request);
 
-    $post->header('SOAPMethodName' => $method_uri . '#' . $method_name);
+    #
+    # NOTE NOTE NOTE
+    # CLR prefers a semicolon here
+    # clearly this needs some fixing - maybe allow client to specify SOAPAction directly?
+    #
+    $post->header('SOAPAction' => $method_uri . '#' . $method_name);
 
     if ($self->{debug_request}) {
         $post->header('DebugRequest' => '1');
@@ -44,19 +52,30 @@ sub send_receive {
     
     my $http_response = $ua->request($post);
 
-    my $code = $http_response->code();
-    unless (200 == $code) {
-        #
-        # TBD: need to deal with redirects, M-POST retrys, anything else?
-        #
-        my $content =$http_response->content();
-        croak 'HTTP ' . $post->method() . ' failed: ' . $http_response->code() .
-              ' (' . $http_response->message() .
-              "), in SOAP method call. Content of response:\n$content";
-    }
-    my $soap_response = $http_response->content();
+    my $code    = $http_response->code();
+    my $content = $http_response->content();
 
-    ($code, $http_response->content());
+    unless (200 == $code) {
+        # CLR (technically, HTTP/1.1) hack
+	my $ok = 0;
+	if (100 == $code) {
+	    if ($content =~ /^HTTP\/1\.1 200 OK/) {
+		$ok = 1;
+		$code = 200;
+		# this hack really doesn't work because the resulting content
+		# includes the HTTP/1.1 response headers. Geez...
+	    }
+	}
+	unless ($ok) {
+            #
+            # TBD: need to deal with redirects, M-POST retrys, anything else?
+            #
+            croak 'HTTP ' . $post->method() . ' failed: ' . $http_response->code() .
+                  ' (' . $http_response->message() .
+                  "), in SOAP method call. Content of response:\n$content";
+        }
+    }
+    ($code, $content);
 }
 
 1;

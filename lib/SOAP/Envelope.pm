@@ -2,7 +2,7 @@ package SOAP::Envelope;
 
 use strict;
 use vars qw($VERSION);
-$VERSION = '0.23';
+$VERSION = '0.25';
 
 use SOAP::Defs;
 use SOAP::OutputStream;
@@ -35,10 +35,11 @@ sub new {
     #
     my $attrs = '';
     if ($self->{use_namespaces}) {
-        $self->{soap_prefix} = 's:';
+        $self->{soap_prefix} = $soap_prefix . ':';
 
-        $attrs .= $self->_preload_ns($soap_namespace, 's');
-        $attrs .= $self->_preload_ns($xsd_namespace, 'xsi');
+        $attrs .= $self->_preload_ns($soap_namespace, $soap_prefix);
+        $attrs .= $self->_preload_ns($xsd_namespace, $xsd_prefix);
+        $attrs .= $self->_preload_ns($xsi_namespace, $xsi_prefix);
     }
 
     $self->{packager} = $self->_create_new_packager();
@@ -49,6 +50,8 @@ sub new {
         }
     }
     my $sp = $self->{soap_prefix};
+
+    $attrs .= qq[ $sp$soap_encoding_style="$soap_section5_encoding"];
 
     $self->_print(qq[<$sp$soap_envelope$attrs>]);
 
@@ -90,7 +93,7 @@ sub header {
             (my $nsdecl, $nsprefix) = $self->_get_ns_decl_and_prefix($typeuri);
             $attrs .= $nsdecl if $nsdecl;
         }
-        $attrs .= qq[ xsi:type="${nsprefix}$typename"];
+        $attrs .= qq[ $xsi_prefix:type="${nsprefix}$typename"];
     }
 
     if ($must_understand) {
@@ -162,7 +165,9 @@ sub body {
             (my $nsdecl, $nsprefix) = $self->_get_ns_decl_and_prefix($accessor_uri);
             $attrs .= $nsdecl if $nsdecl;
         }
+# CLR (CLR doesn't like URI prefix on body root :-/
         $tag = qq[$nsprefix$accessor_name];
+#        $tag = qq[$accessor_name];
     }
 
     if (defined $typename) {
@@ -172,7 +177,7 @@ sub body {
             $attrs .= $nsdecl if $nsdecl;
         }
 	if (defined $accessor_name) {
-	    $attrs .= qq[ xsi:type="$nsprefix$typename"];
+	    $attrs .= qq[ $xsi_prefix:type="$nsprefix$typename"];
 	}
 	else {
 	    # if no accessor name defined, pick it up from the type name
@@ -185,7 +190,7 @@ sub body {
     if ($object) {
         #
         # by passing in this optional parameter,
-        # the body may be used as a multi-reference root
+        # the root element of the body may be used as a multi-reference root
         #
         my $id = $packager->is_registered($object);
         if ($id) {

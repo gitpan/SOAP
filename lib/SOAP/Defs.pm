@@ -1,39 +1,39 @@
 package SOAP::Defs;
-$VERSION = '0.23';
+$VERSION = '0.25';
 use vars(qw($VERSION));
 require Exporter;
 @ISA = qw(Exporter);
 
 #
-# Numeric constants from the SOAP spec
-#
-$soap_status_version_mismatch    = 100;
-$soap_status_must_understand     = 200;
-$soap_status_invalid_request     = 300;
-$soap_status_application_faulted = 400;
-
-#
 # Strings from the SOAP spec
 #
-$soap_namespace         = 'urn:schemas-xmlsoap-org:soap.v1';
-$soap_envelope          = 'Envelope';
-$soap_body              = 'Body';
-$soap_header            = 'Header';
-$soap_package           = 'Package';
-$soap_id                = 'id';
-$soap_href              = 'href';
-$soap_must_understand   = 'mustUnderstand';
-$soap_runcode_yes       = 'Yes';
-$soap_runcode_no        = 'No';
-$soap_runcode_maybe     = 'Maybe';
-$soap_root_with_id      = 'rootWithId';
-$soap_true              = '1';
-$soap_false             = '0';
+$soap_namespace           = 'http://schemas.xmlsoap.org/soap/envelope/';
+$soap_prefix              = 's'; # purposely avoid SOAP-ENV during development
+$soap_encoding_style      = 'encodingStyle';
+$soap_section5_encoding   = 'http://schemas.xmlsoap.org/soap/encoding/';
+$soap_envelope            = 'Envelope';
+$soap_body                = 'Body';
+$soap_header              = 'Header';
+$soap_package             = 'Package';
+$soap_id                  = 'id';
+$soap_href                = 'href';
+$soap_must_understand     = 'mustUnderstand';
+$soap_root_with_id        = 'root';
+$soap_true                = '1';
+$soap_false               = '0';
+$soap_fc_version_mismatch = 'VersionMismatch';
+$soap_fc_must_understand  = 'MustUnderstand';
+$soap_fc_client           = 'Client';
+$soap_fc_server           = 'Server';
+
 
 #
 # Strings from the XML Schema spec
 #
-$xsd_namespace     = 'http://www.w3.org/1999/XMLSchema/instance';
+$xsd_namespace     = 'http://www.w3.org/1999/XMLSchema';
+$xsi_namespace     = 'http://www.w3.org/1999/XMLSchema-instance';
+$xsd_prefix        = 'xsd';
+$xsi_prefix        = 'xsi';
 $xsd_null          = 'null';
 $xsd_type          = 'type';
 $xsd_string        = 'string';
@@ -41,21 +41,14 @@ $xsd_string        = 'string';
 #
 # SOAP/Perl implementation specific constants
 #
-$soapperl_accessor_type_simple          = 1;
-$soapperl_accessor_type_compound        = 2;
-$soapperl_accessor_type_array           = 3;
 $soapperl_intrusive_hash_key_typeuri    = 'soap_typeuri';
 $soapperl_intrusive_hash_key_typename   = 'soap_typename';
 
-my @soap_spec_numerics =
-    qw( $soap_status_version_mismatch
-        $soap_status_must_understand
-        $soap_status_invalid_request
-        $soap_status_application_faulted
-        );
-
 my @soap_spec_strings =
     qw( $soap_namespace
+	$soap_prefix
+        $soap_encoding_style
+        $soap_section5_encoding
         $soap_envelope
         $soap_body
         $soap_header
@@ -63,16 +56,20 @@ my @soap_spec_strings =
         $soap_id
         $soap_href
         $soap_must_understand
-        $soap_runcode_yes
-        $soap_runcode_no
-        $soap_runcode_maybe
         $soap_root_with_id
         $soap_true
         $soap_false
+	$soap_fc_version_mismatch
+	$soap_fc_must_understand
+	$soap_fc_client
+	$soap_fc_server
         );
 
 my @xsd_spec_strings =
     qw( $xsd_namespace
+	$xsi_namespace
+	$xsd_prefix
+	$xsi_prefix
         $xsd_type
         $xsd_null
         $xsd_string
@@ -87,8 +84,7 @@ my @soapperl_constants =
         );
 
 @EXPORT =
-    ( @soap_spec_numerics,
-      @soap_spec_strings,
+    ( @soap_spec_strings,
       @xsd_spec_strings,
       @soapperl_constants,
     );

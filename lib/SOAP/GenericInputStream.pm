@@ -5,7 +5,7 @@ use vars qw($VERSION);
 use SOAP::Defs;
 use SOAP::TypeMapper;
 
-$VERSION = '0.23';
+$VERSION = '0.25';
 
 ########################################################################
 # constructor
@@ -241,6 +241,12 @@ that tells you that this node is a package (generally you can ignore this; SOAP:
 does all the work to deal with packages). Resolver may or may not be defined,
 and I'll discuss how it works shortly.
 
+NOTE NOTE NOTE: The SOAP "package" attribute was dropped when the SOAP spec
+                went from version 1.0 to version 1.1. Use package-related
+                functionality at your own risk - you may not interoperate
+                with other servers if you rely on it. I'll eventually remove
+                this feature if it doesn't reappear in the spec soon.
+
 This function must return a blessed object reference that implements the
 same interface (nothing prohibits you from simply returning $self, but since SOAP::Parser
 keeps track of these object references on a per-node basis, it's usually easier just
@@ -303,7 +309,7 @@ as creating a closure that simply delays a call to reference_accessor on yoursel
 
         # return a closure to complete the transaction at a later date
         return sub {
-            my $object = @_;
+            my ($object) = @_;
             $self->reference_accessor($accessor_uri, $accessor_name, $object);
         };
     }

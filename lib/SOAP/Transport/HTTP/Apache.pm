@@ -2,7 +2,7 @@ package SOAP::Transport::HTTP::Apache;
 
 use strict;
 use vars qw($VERSION);
-$VERSION = '0.23';
+$VERSION = '0.25';
 
 use SOAP::Transport::HTTP::Server;
 
@@ -33,25 +33,28 @@ sub handler {
     };
 
     my $response_header_writer = sub {
-        $r->header_out(@_);
+	# TBD: call err_header_out on error
+$r->log_error(sprintf("calling header_out(%s, %s)", @_));
+	$r->header_out(@_);
     };
 
     my $sent_headers = 0;
     my $response_content_writer = sub {
-        $r->send_http_header() unless $sent_headers++;
-        $r->print(shift);
+	# TBD: call custom_response on error
+	$r->send_http_header() unless $sent_headers++;
+$r->log_error(sprintf("calling print(%s)", @_));
+	$r->print(shift);
     };
 
     my $s = SOAP::Transport::HTTP::Server->new();
 
     $s->handle_request($http_method, $request_class,
-                       $request_header_reader, 
-                       $request_content_reader,
-                       $response_header_writer,
-                       $response_content_writer,
-                       $optional_dispatcher);
-
-    return OK;
+			   $request_header_reader, 
+			   $request_content_reader,
+			   $response_header_writer,
+			   $response_content_writer,
+			   $optional_dispatcher);
+    OK;
 }
 
 1;

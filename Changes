@@ -1,0 +1,24 @@
+Revision history for Perl extension SOAP.
+
+0.10  Sun Oct  3 02:07:18 1999
+	- original version; created by h2xs 1.19
+
+0.12  Sun  Oct 9  03:56:50 1999
+	- added support for parsing SOAP bars where SerializedStream
+	  element is missing
+	- added interactive initialization of SOAP::Config
+	- added a live test (downloads CDL and makes a SOAP call)
+	- added a Win32 friendly package (a zipped version)
+
+0.20  Thu  Dec 29  08:52:49 1999
+	- Complete rewrite - first beta release striving for compliance
+          with SOAP v1.0
+
+0.21  Thu  Dec 29  18:47:57 1999
+	- Added SOAP::Transport::HTTP::CGI to get IIS/Win32 developers
+          under the tent as well
+
+0.22  Fri  Dec 30  18:46:13 1999
+        - First version made available via CPAN
+	- Added SOAP.pm and README, and cleaned up some of the documentation
+          in preparation for uploading to CPAN

@@ -4,7 +4,7 @@ use strict;
 use vars qw($VERSION);
 use SOAP::Defs;
 
-$VERSION = '0.26';
+$VERSION = '0.28';
 
 ########################################################################
 # constructor

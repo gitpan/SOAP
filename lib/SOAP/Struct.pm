@@ -5,17 +5,14 @@ use vars qw($VERSION);
 
 use SOAP::StructSerializer;
 
-$VERSION = '0.26';
-
-use fields qw(content contains_types);
+$VERSION = '0.28';
 
 sub new {
-    my SOAP::Struct $self = shift;
-    unless (ref $self) {
-	$self = fields::new($self);
-	$self->{content} = \@_;
-    }
-    $self;
+    my $class = shift;
+    my $self = {
+	content => [@_],
+    };
+    bless $self, $class;
 }
 
 sub new_typed {

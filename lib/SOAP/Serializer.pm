@@ -7,7 +7,7 @@ require Exporter;
 use strict;
 use vars qw($VERSION);
 
-$VERSION = '0.26';
+$VERSION = '0.28';
 
 sub _serialize_object {
     my ($stream, $envelope, $k_uri, $k, $v) = @_;

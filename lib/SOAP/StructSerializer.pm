@@ -4,18 +4,15 @@ use strict;
 use vars qw($VERSION);
 use SOAP::Serializer;
 
-$VERSION = '0.26';
-
-use fields qw(struct typeuri typename multiref);
+$VERSION = '0.28';
 
 sub new {
-    my SOAP::StructSerializer $self = shift;
-    unless (ref $self) {
-	$self = fields::new($self);
-	$self->{struct} = shift;
-	$self->{multiref} = 1;
-    }
-    $self;
+    my $class = shift;
+    my $self = {
+	struct   => shift,
+	multiref => 1,
+    };
+    bless $self, $class;
 }
 
 sub set_typeinfo {

@@ -5,7 +5,7 @@ use vars qw($VERSION);
 use SOAP::Defs;
 use SOAP::TypedPrimitiveSerializer;
 
-$VERSION = '0.26';
+$VERSION = '0.28';
 
 sub new {
     my ($class, $value, $type) = @_;

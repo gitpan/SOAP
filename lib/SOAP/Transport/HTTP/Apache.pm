@@ -2,7 +2,7 @@ package SOAP::Transport::HTTP::Apache;
 
 use strict;
 use vars qw($VERSION);
-$VERSION = '0.26';
+$VERSION = '0.28';
 
 use SOAP::Transport::HTTP::Server;
 

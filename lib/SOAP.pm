@@ -1,6 +1,6 @@
 package SOAP;
 
-$VERSION = '0.26';
+$VERSION = '0.28';
 sub Version { $VERSION; }
 
 require 5.004;

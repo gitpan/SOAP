@@ -3,7 +3,7 @@ package SOAP::GenericScalarSerializer;
 use strict;
 use vars qw($VERSION);
 
-$VERSION = '0.26';
+$VERSION = '0.28';
 
 sub new {
     my ($class, $scalar) = @_;

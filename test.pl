@@ -70,12 +70,12 @@ internet, please skip this test.
     print "\nMaking a SOAP call to $soap_perl_server: calculateArea()...\n";
 
     eval {
-        print "\n\nCalling the CGI version of the server 15 times:\n";
-        for (my $i = 0; $i < 15; ++$i) {
+        print "\n\nCalling the CGI version of the server 5 times:\n";
+        for (my $i = 0; $i < 5; ++$i) {
             make_call("http://soapl.develop.com/cgi-bin/ServerDemo.pl?class=Geometry");
         }
-        print "\n\nCalling the mod_perl version of the server 15 times:\n";
-        for ($i = 0; $i < 15; ++$i) {
+        print "\n\nSkipping the mod_perl test - we've been having some trouble with mod_perl on the server recently...\n";
+        for ($i = 0; $i < 0; ++$i) {
             make_call("http://soapl.develop.com/soap?class=Geometry");
         }
     };
@@ -145,3 +145,4 @@ Whoops, something bad happened:
 END_MSG
   }
 }
+

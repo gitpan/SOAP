@@ -26,13 +26,20 @@ PREREQUISITES
 This library has been tested by the author on Perl version 5.005.
 Some modules within this package depend on other packages that are
 distributed separately from Perl.  We recommend that you have the
-following packages installed before you install SOAP/Perl:
+following distributions installed before you install SOAP/Perl:
 
   libwww-perl
   XML-Parser
 
-These packages should be available on CPAN.
+Specifically, if you plan on using Apache, you should also obtain:
 
+  mod-perl
+
+unless you're satisfied with CGI performance.
+
+These distributions/modules should be available on CPAN.
+For details on which versions are recommended, please see
+MakeFile.PL.
 
 INSTALLATION
 

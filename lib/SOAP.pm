@@ -1,6 +1,6 @@
 package SOAP;
 
-$VERSION = '0.22';
+$VERSION = '0.23';
 sub Version { $VERSION; }
 
 require 5.004;
@@ -115,10 +115,10 @@ To avoid coupling the SOAP serialization/deserialization code to HTTP,
 a set of loadable transports is also provided. See the following modules
 for documentation of the transport architecture:
 
-SOAP::Transport::HTTP::Client
-SOAP::Transport::HTTP::Server
-SOAP::Transport::HTTP::Apache
-SOAP::Transport::HTTP::CGI
+ SOAP::Transport::HTTP::Client
+ SOAP::Transport::HTTP::Server
+ SOAP::Transport::HTTP::Apache
+ SOAP::Transport::HTTP::CGI
 
 =head2 Where to Find Examples
 
@@ -208,6 +208,8 @@ as well as:
  http://www.develop.com/soap
 
 The best place to discuss this code is on the SOAP
-mailing list at <URL:http://discuss.develop.com/soap.html>.
+mailing list at:
+
+ http://discuss.develop.com/soap.html
 
 =cut

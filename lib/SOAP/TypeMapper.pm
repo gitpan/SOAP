@@ -6,7 +6,7 @@ use SOAP::GenericHashSerializer;
 use strict;
 use vars qw($VERSION);
 
-$VERSION = '0.22';
+$VERSION = '0.23';
 
 sub new {
     my ($class) = @_;
@@ -33,17 +33,22 @@ my $g_unhandled_types_for_serialization = {
 sub get_serializer {
     my ($self, $object) = @_;
 
-    #
-    # TBD: exactly which types will I need to support here?
-    #
+# for now, assume caller handles undef according to context
+    unless (defined $object) {
+	die "unexpected call to get_serializer with <undef>";
+    }
+#    unless (defined $object) {
+#	return SOAP::GenericScalarSerializer->new('');
+#    }
     my $reftype = ref $object;
-    unless ($reftype) { die "unexpected - get_serializer called for non-reference type" }
+    unless ($reftype) {
+	return SOAP::GenericScalarSerializer->new($object)
+    }
     if (exists $g_unhandled_types_for_serialization->{$reftype}) {
         die $g_unhandled_types_for_serialization->{$reftype};
     }
-    
     if ('SCALAR' eq $reftype) {
-        return SOAP::GenericScalarSerializer->new($object);
+        return SOAP::GenericScalarSerializer->new($$object);
     }
     if ('HASH' eq $reftype) {
         return SOAP::GenericHashSerializer->new($object);

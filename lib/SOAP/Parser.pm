@@ -2,7 +2,7 @@ package SOAP::Parser;
 
 use strict;
 use vars qw($VERSION);
-$VERSION = '0.22';
+$VERSION = '0.23';
 
 use SOAP::Defs;
 use SOAP::GenericInputStream;
@@ -205,11 +205,11 @@ sub _header_on_start {
         if (my $href = $self->{href}) {
             my ($found_it, $result) = $self->_lookup_href($href);
             if ($found_it) {
-                $self->_add_header($result);
+                $self->_add_header($child_typeuri, $child_typename, $result);
             }
             else {
                 push @$result, sub {
-                    $self->_add_header(shift);
+                    $self->_add_header($child_typeuri, $child_typename, shift);
                 };
             }
             $self->_push_handlers(Start => sub { $self->_ref_on_start(@_) },
@@ -223,7 +223,7 @@ sub _header_on_start {
         }
         $resolver = sub {
             my $object = shift;
-            $self->_add_header($object);
+            $self->_add_header($child_typeuri, $child_typename, $object);
             $self->_found_id($id, $object) if $id;
         };
     }
@@ -478,9 +478,13 @@ sub _generic_on_end {
         # we just left the scope of the current compound accessor,
         # so we need to close the current marshaling scope
         #
-        $self->_soap_stream()->term();
+	my $stream = $self->_soap_stream();
+	my $text = $self->{text};
+	$stream->content($text) if (length $text and $text =~ /\S/);
+        $stream->term();
         $self->_pop_context();
     }
+    $self->{text} = '';
     $self->_pop_handlers();
 }
 
@@ -816,9 +820,12 @@ sub _create_parser {
 }
 
 sub _add_header {
-    my ($self, $object) = @_;
+    my ($self, $typeuri, $typename, $object) = @_;
     my $headers = $self->{headers};
-    push @$headers, $object;
+    push @$headers, { soap_typeuri  => $typeuri,
+		      soap_typename => $typename,
+		      content       => $object
+                    };
 }
 
 sub _push_handlers {
@@ -939,6 +946,85 @@ Parses the given string.
 =head2 parsefile(Filename)
 
 Parses the given file.
+
+=head2 get_headers()
+
+After parsing, this function returns the array of headers
+in the SOAP envelope.
+
+Specifically, this function returns an array reference that
+contains zero or more hash references, each
+of which always take the following form:
+
+  {
+    soap_typeuri  => 'namespace qualification of header',
+    soap_typename => 'unqualified name of header',
+    content       => <header object>
+  }
+
+For instance, the following header:
+
+ <f:MyHeader xmlns:f="urn:foo">42 </f:MyHeader>
+
+would be deserialized in this form:
+
+  {
+    soap_typeuri  => 'urn:foo',
+    soap_typename => 'MyHeader',
+    content       => 42,
+  }
+ 
+while this header:
+
+ <f:MyHeader xmlns:f="urn:foo">
+  <m1>something</m1>
+  <m2>something else</m2>
+ </f:MyHeader>
+
+would be deserialized (by default) in this form:
+
+  {
+    soap_typeuri  => 'urn:foo',
+    soap_typename => 'MyHeader',
+    content       => {
+        soap_typeuri  => 'urn:foo',
+        soap_typename => 'MyHeader',
+        m1 => 'something',
+        m2 => 'something else',
+    },
+  }
+
+Note the redundancy of the soap_typeuri and soap_typename isn't
+strictly necessary in this case because this information is embedded
+in the content itself. However, because of the potential (and common
+need) for sending scalars as the entirety of the header content,
+we need some way of communicating the namespace and typename of the
+header. Thus the content, for consistency, is always packaged in
+a hash along with explicit type information. 
+
+=head2 get_body()
+
+After parsing, this function retrieves the body of the SOAP envelope.
+
+Since it doesn't make sense to send just a scalar as the body
+of a SOAP request, we don't need the redundancy of packaging the content
+inside of a hash along with its type and namespace (as was done above
+with headers). For instance:
+
+
+ <f:MyBody xmlns:f="urn:foo">
+  <m1>something</m1>
+  <m2>something else</m2>
+ </f:MyBody>
+
+would be deserialized (by default) as the following:
+
+ {
+   soap_typeuri  => 'urn:foo',
+   soap_typename => 'MyBody',
+   m1 => 'something',
+   m2 => 'something else',
+ }
 
 =head1 DEPENDENCIES
 

@@ -4,14 +4,12 @@ use strict;
 use vars qw($VERSION);
 use SOAP::Defs;
 
-$VERSION = '0.22';
+$VERSION = '0.23';
 
 sub new {
-    my ($class, $scalar_ref) = @_;
+    my ($class, $scalar) = @_;
     
-    my $self = {
-        scalar => $$scalar_ref,
-    };
+    my $self = \$scalar;
     bless $self, $class;
 }
 
@@ -29,7 +27,7 @@ sub get_accessor_type {
 
 sub serialize_as_string {
     my $self = shift;
-    $self->{scalar};
+    $$self;
 }
 
 1;
@@ -42,7 +40,11 @@ SOAP::GenericScalarSerializer - Generic serializer for Perl scalar references
 
 =head1 SYNOPSIS
 
+Forthcoming
+
 =head1 DESCRIPTION
+
+Forthcoming
 
 =head1 AUTHOR
 

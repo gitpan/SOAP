@@ -2,7 +2,7 @@ package SOAP::Transport::HTTP::CGI;
 
 use strict;
 use vars qw($VERSION);
-$VERSION = '0.22';
+$VERSION = '0.23';
 
 use SOAP::Transport::HTTP::Server;
 
@@ -11,7 +11,7 @@ my $status_strings = {
 };
 
 sub handler {
-    my (undef, $safe_classes) = @_;
+    my (undef, $safe_classes, $optional_dispatcher) = @_;
 
     unless ($ENV{QUERY_STRING} =~ /class=(.+$)/) {
 	    return _send_status(400);
@@ -51,7 +51,9 @@ sub handler {
     $s->handle_request($http_method, $request_class,
                        $request_header_reader, 
                        $request_content_reader,
-                       $response_header_writer, $response_content_writer);
+                       $response_header_writer,
+		       $response_content_writer,
+		      $optional_dispatcher);
 }
 
 sub _send_status {

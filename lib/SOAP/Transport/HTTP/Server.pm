@@ -2,7 +2,7 @@ package SOAP::Transport::HTTP::Server;
 
 use strict;
 use vars qw($VERSION);
-$VERSION = '0.22';
+$VERSION = '0.23';
 
 use SOAP::Defs;
 use SOAP::Parser;
@@ -102,11 +102,6 @@ sub handle_request {
         #
         eval {
             my $em = SOAP::EnvelopeMaker->new(sub { $response_content .= shift });
-
-	    use Apache;
-	    Apache->request()->log_error("calling optional_dispatcher, passing [$request_class]");
-
-
             $optional_dispatcher->($request_class, $headers, $body, $em);
         };
         if ($@) {
@@ -120,9 +115,7 @@ sub handle_request {
         #
         # Load the requested class
         #
-        eval {
-            require $request_class . '.pm';
-        };
+        eval "require $request_class";
         if ($@) {
             return $self->_output_soap_fault(undef, $soap_status_application_faulted,
                                              'Application Faulted', $soap_runcode_no,

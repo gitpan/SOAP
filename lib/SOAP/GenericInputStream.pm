@@ -5,7 +5,7 @@ use vars qw($VERSION);
 use SOAP::Defs;
 use SOAP::TypeMapper;
 
-$VERSION = '0.22';
+$VERSION = '0.23';
 
 ########################################################################
 # constructor
@@ -15,23 +15,28 @@ sub new {
 
     $type_mapper ||= SOAP::TypeMapper->defaultMapper();
 
-    my $hash = {};
-    $hash->{$soapperl_intrusive_hash_key_typeuri}  = $typeuri  if $typeuri;
-    $hash->{$soapperl_intrusive_hash_key_typename} = $typename if $typename;
-
-
     my $self = {
-        hash        => $hash,
         resolver    => $resolver,
         diags       => 'root',
         type_mapper => $type_mapper,
+        hash        => {},
+        text        => '',
+        has_accessors => 0,
     };
+
+    $self->{$soapperl_intrusive_hash_key_typeuri}  = $typeuri  if $typeuri;
+    $self->{$soapperl_intrusive_hash_key_typename} = $typename if $typename;
+
     bless $self, $class;
 }
 
 ########################################################################
 # interface ISoapStream
 ########################################################################
+sub content {
+#   my ($self, $text) = @_;
+    &_content;
+}
 sub simple_accessor {
 #   my ($self, $accessor_uri, $accessor_name, $typeuri, $typename, $content) = @_;
     &_simple_accessor;
@@ -60,12 +65,19 @@ sub term {
 ########################################################################
 # implementation
 ########################################################################
+sub _content {
+    my ($self, $text) = @_;
+
+    $self->{text} = $text;
+}
 sub _simple_accessor {
     my ($self, $accessor_uri, $accessor_name, $typeuri, $typename, $content) = @_;
 
     #
     # TBD: perform appropriate transformation based on $typename
     #
+
+    ++$self->{has_accessors};
 
     $self->_add_accessor($accessor_name, $content);
 }
@@ -83,6 +95,8 @@ sub _compound_accessor {
                                                         $typename,
                                                         $my_resolver);
 
+    ++$self->{has_accessors};
+
     #
     # DIAGS
     #
@@ -96,11 +110,15 @@ sub _compound_accessor {
 sub _reference_accessor {
     my ($self, $accessor_uri, $accessor_name, $object) = @_;
 
+    ++$self->{has_accessors};
+
     $self->_add_accessor($accessor_name, $object);
 }
 
 sub _forward_reference_accessor {
     my ($self, $accessor_uri, $accessor_name) = @_;
+
+    ++$self->{has_accessors};
 
     # return a closure to complete the transaction at a later date
     sub { $self->_add_accessor($accessor_name, shift) };
@@ -108,8 +126,33 @@ sub _forward_reference_accessor {
 
 sub _term {
     my ($self) = @_;
-    
-    $self->{resolver}->($self->{hash});
+
+    my $text = $self->{text};
+    my $hash = $self->{hash};
+
+    #
+    # to determine whether this is a hash or a scalar node,
+    # see if there were any accessors
+    #
+    my $object;
+    if ($self->{has_accessors}) {
+	#
+	# there were accessors, so verify that there was no
+	# non-whitespace text interspersed in between them
+	#
+	if ($text =~ /\S/) {
+	    die "Found non-whitespace content between accessors: [$text]";
+	}
+	$object = $self->{hash};
+    }    
+    else {
+	$object = $self->{text};
+    }
+
+    $hash->{$soapperl_intrusive_hash_key_typeuri}  = $self->{$soapperl_intrusive_hash_key_typeuri}  if exists $self->{$soapperl_intrusive_hash_key_typeuri};
+    $hash->{$soapperl_intrusive_hash_key_typename} = $self->{$soapperl_intrusive_hash_key_typename} if exists $self->{$soapperl_intrusive_hash_key_typename};
+
+    $self->{resolver}->($object);
 }
 
 #############################################################

@@ -6,7 +6,7 @@ use SOAP::Defs;
 use SOAP::TypeMapper;
 use SOAP::Envelope;
 
-$VERSION = '0.22';
+$VERSION = '0.23';
 
 sub new {
     my ($class, $print_fcn, $type_mapper) = @_;
@@ -26,6 +26,10 @@ sub add_header {
                $must_understand, $is_package,
                $object) = @_;
 
+    unless (defined $object) {
+	die "add_header was passed a null object reference";
+    }
+
     my $serializer = $self->{type_mapper}->get_serializer($object);
     my ($typeuri, $typename) = $serializer->get_typeinfo();
 
@@ -37,17 +41,18 @@ sub add_header {
 
     my $stream = $env->header($accessor_uri, $accessor_name,
                               $typeuri, $typename,
-                              $must_understand, $is_package, $object);
-    if ($stream) {
-        $serializer->serialize($stream);
-        $stream->term();
-    }
+                              $must_understand, $is_package,
+			      ref $object ? $object : undef);
+    $self->_serialize_and_term($serializer, $stream);
 }
 
 sub set_body {
     my ($self, $accessor_uri, $accessor_name,
                $is_package, $object) = @_;
 
+    unless (defined $object) {
+	die "set_body was passed a null object reference";
+    }
     my $serializer = $self->{type_mapper}->get_serializer($object);
     my ($typeuri, $typename) = $serializer->get_typeinfo();
 
@@ -59,13 +64,25 @@ sub set_body {
 
     my $stream = $env->body($accessor_uri, $accessor_name,
                             $typeuri, $typename,
-                            $is_package, $object);
-    if ($stream) {
-        $serializer->serialize($stream);
-        $stream->term();
-    }
+                            $is_package,
+			    ref $object ? $object : undef);
+    $self->_serialize_and_term($serializer, $stream);
     $env->term();
     $self->{envelope} = undef;
+}
+
+sub _serialize_and_term {
+    my ($self, $serializer, $stream) = @_;
+
+    if ($stream) {
+	if ($soapperl_accessor_type_simple == $serializer->get_accessor_type()) {
+	    $self->{print_fcn}->($serializer->serialize_as_string())
+	}
+	else {	    
+	    $serializer->serialize($stream);
+	}
+	$stream->term();
+    }
 }
 
 sub _get_envelope {
@@ -117,13 +134,84 @@ my $soap_response = $soap_on_http->send_receive($endpoint,
                                                 $soap_request);
 use SOAP::Parser;
 my $soap_parser = SOAP::Parser->new();
-$soap_parser->parse($soap_response);
+$soap_parser->parsestring($soap_response);
 
 my $area = $soap_parser->get_body()->{area};
 
 print "The area is: $area\n";
 
 =head1 DESCRIPTION
+
+The overall usage pattern of SOAP::EnvelopeMaker is as follows:
+
+1) Determine what you want to do with the resulting SOAP packet
+   and create an output function that implements this policy.
+
+2) Create an instance of SOAP::EnvelopeMaker, passing a reference
+   to your output function.
+
+(note that somebody may already have done these first two steps
+ on your behalf and simply passed you a reference to a pre-initialized
+ EnvelopeMaker - see SOAP::Transport::HTTP::Server for an example)
+
+3) (optional) Call add_header one or more times to specify headers.
+
+4) (required) Call set_body to specify the body.
+
+5) Throw away the EnvelopeMaker and do something with the envelope
+   that you've collected via your output function (assuming you've
+   not simply been piping the output somewhere as it's given to you).
+
+EnvelopeMaker expects that you'll add *all* your headers *before*
+setting the body - if you mess this up, the results are undefined.
+
+By the time set_body returns, a complete SOAP envelope will have been
+sent to your output function (in one or more chunks). You can 
+
+=head2 new(OutputFcn)
+
+OutputFcn should accept a single scalar parameter, and will be called
+multiple times with chunks of the SOAP envelope as it is constructed.
+You can either append these chunks into a big string, waiting until
+the entire envelope is constructed before you do something with it
+(like calculate the content-length, for instance), or you can simply
+pipe each chunk directly to somebody else.
+
+=head2 add_header(AccessorUri, AccessorName, MustUnderstand, IsPackage, Object)
+
+The first two parameters allow you to specify a QName (qualified name)
+for your header. Note that in SOAP, all headers MUST be namespace
+qualified. MustUnderstand and IsPackage turn on SOAP features that are
+explained in the SOAP spec; if you haven't yet grok'd SOAP packages,
+just pass 0 for IsPackage. Finally, Object is whatever you'd like to
+serialize into the header (see set_body for notes on what can go here;
+headers can contain the same stuff as the body).
+
+=head2 set_body(AccessorUri, AccessorName, IsPackage, Object)
+
+The first two parameters allow you to specify a QName (qualified name)
+for the body. The name of the accessor is the name of the SOAP method
+call you're making. IsPackage says that the body will be a SOAP package;
+just pass 0 if you're not sure what this means. Object is whatever you'd
+like to serialize. This can be one of the following things:
+
+1) a scalar - the body will contain the scalar content.
+
+2) a hash reference - the body will contain a SOAP serialized version
+                      of the contents of the hash.
+
+Note that the SOAP/Perl serialization architecture deals with references
+very carefully, so it is possible to pass arbitrary object graphs (although
+each "object reference" must currently be a non-blessed scalar or hash reference).
+
+In the future, expect to see support for passing blessed object references
+(if you want to do this today, see the experimental SOAP::TypeMapper).
+
+One interesting thing SOAP (and SOAP/Perl) support is that the headers
+and body can share references. They can point to the same stuff. Also,
+cycle detection is a natural part of SOAP/Perl's serialization architecture,
+so you can pass linked lists, circular queues, etc. and they will be
+rehydrated correctly.
 
 =head1 DEPENDENCIES
 

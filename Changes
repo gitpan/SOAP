@@ -22,3 +22,8 @@ Revision history for Perl extension SOAP.
         - First version made available via CPAN
 	- Added SOAP.pm and README, and cleaned up some of the documentation
           in preparation for uploading to CPAN
+
+0.23  Tue  Jan 10  00:08:00 2000
+	- Added support for passing top-level scalars in SOAP headers
+	- Changed xsi namespace to include "/instance" trailer
+

@@ -1,5 +1,5 @@
 package SOAP::Defs;
-$VERSION = '0.22';
+$VERSION = '0.23';
 use vars(qw($VERSION));
 require Exporter;
 @ISA = qw(Exporter);
@@ -33,7 +33,7 @@ $soap_false             = '0';
 #
 # Strings from the XML Schema spec
 #
-$xsd_namespace     = 'http://www.w3.org/1999/XMLSchema';
+$xsd_namespace     = 'http://www.w3.org/1999/XMLSchema/instance';
 $xsd_null          = 'null';
 $xsd_type          = 'type';
 $xsd_string        = 'string';

@@ -1,5 +1,5 @@
 package SOAP::Defs;
-$VERSION = '0.25';
+$VERSION = '0.26';
 use vars(qw($VERSION));
 require Exporter;
 @ISA = qw(Exporter);

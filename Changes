@@ -37,3 +37,6 @@ Revision history for Perl extension SOAP.
 	- Changed "rootWithId" attribute to "root"
         - Deprecated SOAP::SimpleTypeWrapper; found a cleaner solution
         - Updated documentation
+0.26  Wed  Aug 29  09:32:25 2000
+	- Fixed id and href to be unqualified names
+	- Removed some leftover debugging output to Apache log (whoops)

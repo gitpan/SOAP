@@ -2,7 +2,7 @@ package SOAP::Parser;
 
 use strict;
 use vars qw($VERSION);
-$VERSION = '0.25';
+$VERSION = '0.26';
 
 use SOAP::Defs;
 use SOAP::GenericInputStream;
@@ -31,8 +31,8 @@ my $c_accessor_type_simple   = $enum++;
 my $c_accessor_type_compound = $enum++;
 
 my $g_attr_parse_table = {
-    $soap_id            => [$soap_namespace, 'id'           ],
-    $soap_href          => [$soap_namespace, 'href'         ],
+    $soap_id            => [undef,           'id'           ],
+    $soap_href          => [undef,           'href'         ],
     $soap_package       => [$soap_namespace, 'package'      ],
     $soap_root_with_id  => [$soap_namespace, 'root_with_id' ],
     $xsd_type           => [$xsi_namespace,  'typename'     ],
@@ -695,7 +695,7 @@ sub _parse_child_element_attrs {
         my $attr = $attrs->[$i];
         if (exists $g_attr_parse_table->{$attr}) {
             my ($ns, $method_suffix) = @{$g_attr_parse_table->{$attr}};
-            if ($self->{has_namespaces}) {
+            if (defined $ns and $self->{has_namespaces}) {
                 #
                 # verify namespace
                 #

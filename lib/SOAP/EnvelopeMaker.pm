@@ -6,7 +6,7 @@ use SOAP::Defs;
 use SOAP::TypeMapper;
 use SOAP::Envelope;
 
-$VERSION = '0.25';
+$VERSION = '0.26';
 
 sub new {
     my ($class, $print_fcn, $type_mapper) = @_;

@@ -2,7 +2,7 @@ package SOAP::Transport::HTTP::Client;
 
 use strict;
 use vars qw($VERSION);
-$VERSION = '0.25';
+$VERSION = '0.26';
 
 use SOAP::Defs;
 use LWP::UserAgent;

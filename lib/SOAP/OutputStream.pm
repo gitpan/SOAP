@@ -4,7 +4,7 @@ use strict;
 use vars qw($VERSION);
 use SOAP::Defs;
 
-$VERSION = '0.25';
+$VERSION = '0.26';
 
 ########################################################################
 # constructor
@@ -127,7 +127,7 @@ sub _reference_accessor {
     if (defined $object) {
         my $id = $self->{packager}->register($self->{envelope}, $object);
 
-        $attrs = qq[ ${sp}$soap_href="#$id"];
+        $attrs = qq[ $soap_href="#$id"];
     }
     else {
         $attrs .= qq[ $xsi_prefix:$xsd_null="1"];

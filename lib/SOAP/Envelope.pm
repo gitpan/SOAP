@@ -2,7 +2,7 @@ package SOAP::Envelope;
 
 use strict;
 use vars qw($VERSION);
-$VERSION = '0.25';
+$VERSION = '0.26';
 
 use SOAP::Defs;
 use SOAP::OutputStream;
@@ -109,12 +109,12 @@ sub header {
         #
         my $id = $packager->is_registered($object);
         if ($id) {
-            $attrs .= qq[ $sp$soap_href="#$id"];
+            $attrs .= qq[ $soap_href="#$id"];
             $already_marshaled = 1;
         }
         else {
             $id = $packager->register($self, $object, 1);
-            $attrs .= qq[ $sp$soap_id="$id"];
+            $attrs .= qq[ $soap_id="$id"];
         }
         $attrs .= qq[ $sp$soap_root_with_id="1"];
     }
@@ -194,12 +194,12 @@ sub body {
         #
         my $id = $packager->is_registered($object);
         if ($id) {
-            $attrs .= qq[ $sp$soap_href="#$id"];
+            $attrs .= qq[ $soap_href="#$id"];
             $already_marshaled = 1;
         }
         else {
             $id = $packager->register($self, $object, 1);
-            $attrs .= qq[ $sp$soap_id="$id"];
+            $attrs .= qq[ $soap_id="$id"];
         }
         $attrs .= qq[ $sp$soap_root_with_id="1"];
     }

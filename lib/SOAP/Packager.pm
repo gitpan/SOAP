@@ -4,7 +4,7 @@ use strict;
 use vars qw($VERSION);
 use SOAP::Defs;
 
-$VERSION = '0.25';
+$VERSION = '0.26';
 
 sub new {
     my ($class, $soap_prefix, $depth, $print_fcn) = @_;

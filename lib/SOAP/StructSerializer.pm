@@ -4,7 +4,7 @@ use strict;
 use vars qw($VERSION);
 use SOAP::Serializer;
 
-$VERSION = '0.25';
+$VERSION = '0.26';
 
 use fields qw(struct typeuri typename multiref);
 
